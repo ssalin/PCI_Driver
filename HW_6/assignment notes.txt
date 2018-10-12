@@ -1,0 +1,64 @@
+-legacy descriptors receive queue (16) w/ buffer 2014 bytes (2k buffer)
+-keep track of head/tail of receive queue
+-interrupt handler, legacy intterupt source
+-workqueue thread to handle the IRQ
+-modify read()
+	-returns u16
+		-lower 8 bits value of tail
+		-upper 8 bits value of head
+		
+GAME PLAN
+  P1
+	add
+		descriptors
+		buffer
+	next
+		workqueue handler
+		request_irq() //irq should show up in /proc/interrupts
+	next
+		workqueue thread, make interrupt handler invoke
+	next
+		descriptor ring matenance of head/tail in interrupt handler
+		read() change
+	next
+		add re-arming interrupts
+  P2
+    connect boxes, send packets
+  THE DRIVER
+   -driver receives interrupts as packets come across 
+		-in interrupt handler
+			-turn on both green LEDs
+			-submit workqueue thread
+			-re arm-interrupt
+			-return
+		-in workqueue
+			-sleep .5 sec
+			-turn off LEDS
+			-bump tail
+	when userspace opens the file
+		-return packed unsigned int value of
+			-head
+			-tail
+		-unpack in userspace
+		-print
+TESTING
+	make sure wrings wrap
+	send packets, let thread process
+	
+relevant pages in device manual
+	- 56 : initialize contorl register
+	
+	DEALING WITH DESCRIPTORS
+		struct rx_desc{
+		__le64 buffer_addr; //le = little endian
+		union{
+			__le32 data;
+			struct{
+				le_16 length
+				u8 cso;
+				u8 cmd;
+			}flags;
+		}lower;
+		__le64 feilds
+		 
+		}
