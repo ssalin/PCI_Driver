@@ -1,5 +1,0 @@
-config ECE
-	tristate "ECE light driver"
-	depends on PCI
-	help
-	  Blinks Lights on back of atom box
